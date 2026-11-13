@@ -1,0 +1,177 @@
+{
+	"pages": [
+		{
+			"path": "pages/splash/splash",
+			"style": {
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/home/home",
+			"style": {
+				"navigationBarTitleText": "薄荷健康",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/record/record",
+			"style": {
+				"navigationBarTitleText": "记录",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/knowledge/knowledge",
+			"style": {
+				"navigationBarTitleText": "减肥知识库",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/mine/mine",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/register/register",
+			"style": {
+				"navigationBarTitleText": "注册"
+			}
+		},
+		{
+			"path": "pages/food/search",
+			"style": {
+				"navigationBarTitleText": "热量查询"
+			}
+		},
+		{
+			"path": "pages/food/detail",
+			"style": {
+				"navigationBarTitleText": "食物详情"
+			}
+		},
+		{
+			"path": "pages/food/plate",
+			"style": {
+				"navigationBarTitleText": "餐盘分析"
+			}
+		},
+		{
+			"path": "pages/food/ai",
+			"style": {
+				"navigationBarTitleText": "AI 饮食助手"
+			}
+		},
+		{
+			"path": "pages/tools/bmi",
+			"style": {
+				"navigationBarTitleText": "BMI 自测"
+			}
+		},
+		{
+			"path": "pages/tools/exercise",
+			"style": {
+				"navigationBarTitleText": "运动消耗"
+			}
+		},
+		{
+			"path": "pages/record/checkin",
+			"style": {
+				"navigationBarTitleText": "每日打卡"
+			}
+		},
+		{
+			"path": "pages/record/history",
+			"style": {
+				"navigationBarTitleText": "打卡历史"
+			}
+		},
+		{
+			"path": "pages/knowledge/detail",
+			"style": {
+				"navigationBarTitleText": "文章详情"
+			}
+		},
+		{
+			"path": "pages/knowledge/favorites",
+			"style": {
+				"navigationBarTitleText": "我的收藏"
+			}
+		},
+		{
+			"path": "pages/mine/profile",
+			"style": {
+				"navigationBarTitleText": "编辑资料"
+			}
+		},
+		{
+			"path": "pages/mine/password",
+			"style": {
+				"navigationBarTitleText": "修改密码"
+			}
+		},
+		{
+			"path": "pages/mine/stats",
+			"style": {
+				"navigationBarTitleText": "数据统计"
+			}
+		},
+		{
+			"path": "pages/mine/export",
+			"style": {
+				"navigationBarTitleText": "导出数据"
+			}
+		},
+		{
+			"path": "pages/mine/about",
+			"style": {
+				"navigationBarTitleText": "使用说明"
+			}
+		}
+	],
+	"tabBar": {
+		"color": "#9CA39E",
+		"selectedColor": "#2BB673",
+		"backgroundColor": "#FFFFFF",
+		"borderStyle": "white",
+		"list": [
+			{
+				"pagePath": "pages/home/home",
+				"text": "首页",
+				"iconPath": "static/tab/home.png",
+				"selectedIconPath": "static/tab/home-active.png"
+			},
+			{
+				"pagePath": "pages/record/record",
+				"text": "记录",
+				"iconPath": "static/tab/record.png",
+				"selectedIconPath": "static/tab/record-active.png"
+			},
+			{
+				"pagePath": "pages/knowledge/knowledge",
+				"text": "知识",
+				"iconPath": "static/tab/book.png",
+				"selectedIconPath": "static/tab/book-active.png"
+			},
+			{
+				"pagePath": "pages/mine/mine",
+				"text": "我的",
+				"iconPath": "static/tab/mine.png",
+				"selectedIconPath": "static/tab/mine-active.png"
+			}
+		]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "薄荷健康",
+		"navigationBarBackgroundColor": "#2BB673",
+		"backgroundColor": "#F5F7F6"
+	}
+}

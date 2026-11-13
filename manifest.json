@@ -1,0 +1,25 @@
+{
+	"name": "薄荷健康",
+	"appid": "",
+	"description": "面向减肥人群的科学减脂健康小程序",
+	"versionName": "1.0.0",
+	"versionCode": "100",
+	"transformPx": false,
+	"vueVersion": "2",
+	"mp-weixin": {
+		"appid": "",
+		"setting": {
+			"urlCheck": false,
+			"es6": true,
+			"postcss": true,
+			"minified": true
+		},
+		"usingComponents": true,
+		"plugins": {
+			"WechatSI": {
+				"version": "0.3.5",
+				"provider": "wx069ba97219f66d99"
+			}
+		}
+	}
+}

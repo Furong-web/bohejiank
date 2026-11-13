@@ -1,0 +1,38 @@
+# 依赖
+node_modules/
+unpackage/
+.DS_Store
+
+# 日志
+*.log
+
+# 本地私密配置（含真实密钥，禁止提交）
+server/config.local.js
+.env
+.env.local
+
+# 本地运行 / 调试产物
+*.zip
+server/srv.log
+server/srv.err
+server/login.json
+server/*_out.json
+admin/login.json
+admin/proxy_login.json
+admin/screen_via_proxy.json
+admin/vite.log
+admin/vite.err
+
+# 构建产物
+admin/dist/
+
+# 内部计划目录（非项目源码）
+.codebuddy/
+
+# 杂项临时 / 错误残留文件
+_diag.js
+_diag.png
+_ab_install.log
+_dbg.log
+{try{const
+tmp_*.json

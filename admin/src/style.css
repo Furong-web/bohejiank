@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  background: #0a1512;
+  color: #e6f4ea;
+}
+
+/* 滚动条美化（深色） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a4038;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 玻璃拟态卡片（看板用） */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+/* 大屏网格背景 */
+.screen-grid {
+  background-image:
+    linear-gradient(rgba(43, 182, 115, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(43, 182, 115, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.float-in {
+  animation: floatIn 0.6s ease both;
+}
