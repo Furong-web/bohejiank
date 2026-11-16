@@ -1,9 +1,9 @@
 /**
  * B 端机构管理接口（教练 / 企业 HR / 营养师）
  * ------------------------------------------------------------------
- * 说明：现有库是 C 端单用户模型，没有"机构/学员归属"表。本模块用
- * ORGS 常量 + 用户 id 取模做【逻辑分组】，让机构切换与群体画像真实可用；
- * 未来接入真实机构关系表时，只需替换 resolveOrgUsers() 一处即可。
+ * 说明：B 端学员来自独立表 b_students（规范中文姓名 + 机构归属），
+ * 通过 user_id 关联 C 端账号以复用真实打卡数据；学员姓名不再取 users.nickname。
+ * 学员数据由 `npm run seed:students` 生成。
  *
  * 接口（均需管理员 JWT，adminAuth）：
  *  GET  /api/b/orgs              机构列表 + 各机构人数
@@ -30,14 +30,6 @@ const ORGS = [
   { id: 'hrclub', name: '云栖科技 · 员工健康计划', type: '企业 HR', manager: '李经理', desc: '企业员工健康管理福利项目' },
   { id: 'nutri', name: '轻营养中心 · 医学营养门诊', type: '营养机构', manager: '王医师', desc: '慢病与体重管理医学营养干预' }
 ]
-
-/** 按用户 id 稳定分组到某机构（演示用逻辑分组） */
-function orgOfUser(id) {
-  let h = 0
-  const s = String(id)
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
-  return ORGS[h % ORGS.length].id
-}
 
 function safeOrg(raw) {
   return ORGS.some((o) => o.id === raw) ? raw : null
@@ -66,34 +58,34 @@ function pseudoRate(id, salt, base, span) {
 
 const LEVELS = ['优秀', '良好', '一般', '需关注']
 
-/** 一次性拉取全部普通用户的聚合数据（单 SQL，避免 N+1） */
+/** 一次性拉取全部 B 端学员的聚合数据（学员表为主，关联 C 端打卡） */
 async function loadUserStats() {
   const rows = await query(`
-    SELECT u.id, u.username, u.nickname, u.gender, u.age, u.height, u.weight,
-           u.target_weight, u.activity_level, u.created_at,
+    SELECT s.id AS student_id, s.name, s.employee_no, s.org_id, s.user_id,
+           s.gender, s.age, s.height, s.weight AS base_weight,
+           s.target_weight, s.activity_level, s.created_at,
            COALESCE(agg.avg_intake, 0) avg_intake,
            COALESCE(agg.avg_burn, 0) avg_burn,
            COALESCE(agg.days, 0) days,
            COALESCE(today.today_intake, 0) today_intake,
            COALESCE(today.today_burn, 0) today_burn,
-           COALESCE(wlast.weight, u.weight) last_weight,
-           COALESCE(wfirst.weight, u.weight) first_weight
-    FROM users u
+           COALESCE(wlast.weight, s.weight) last_weight,
+           COALESCE(wfirst.weight, s.weight) first_weight
+    FROM b_students s
     LEFT JOIN (
       SELECT user_id, AVG(intake) avg_intake, AVG(burn) avg_burn, COUNT(*) days
       FROM checkins WHERE date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY user_id
-    ) agg ON agg.user_id = u.id
+    ) agg ON agg.user_id = s.user_id
     LEFT JOIN (
       SELECT user_id, intake today_intake, burn today_burn FROM checkins WHERE date = CURDATE()
-    ) today ON today.user_id = u.id
-    LEFT JOIN checkins wlast ON wlast.id = (SELECT c2.id FROM checkins c2 WHERE c2.user_id = u.id AND c2.weight IS NOT NULL ORDER BY c2.date DESC, c2.id DESC LIMIT 1)
-    LEFT JOIN checkins wfirst ON wfirst.id = (SELECT c3.id FROM checkins c3 WHERE c3.user_id = u.id AND c3.weight IS NOT NULL ORDER BY c3.date ASC, c3.id ASC LIMIT 1)
-    WHERE u.role = 1
-    ORDER BY u.id
+    ) today ON today.user_id = s.user_id
+    LEFT JOIN checkins wlast ON wlast.id = (SELECT c2.id FROM checkins c2 WHERE c2.user_id = s.user_id AND c2.weight IS NOT NULL ORDER BY c2.date DESC, c2.id DESC LIMIT 1)
+    LEFT JOIN checkins wfirst ON wfirst.id = (SELECT c3.id FROM checkins c3 WHERE c3.user_id = s.user_id AND c3.weight IS NOT NULL ORDER BY c3.date ASC, c3.id ASC LIMIT 1)
+    ORDER BY s.org_id, s.id
   `)
 
   return rows.map((r) => {
-    const budget = calcBudget(r)
+    const budget = calcBudget({ gender: r.gender, age: r.age, height: r.height, weight: r.base_weight, activity_level: r.activity_level })
     const bmi = bmiOf(r.last_weight, r.height)
     const todayIntake = Number(r.today_intake) || 0
     const todayBurn = Number(r.today_burn) || 0
@@ -102,17 +94,18 @@ async function loadUserStats() {
       avgIntake: Number(r.avg_intake), avgBurn: Number(r.avg_burn),
       checkinRate: Math.min(1, Number(r.days) / 30)
     }
-    const sc = calcHealthScore(r, stats)
-    const protein = pseudoRate(r.id, 'p', 58, 42) // 58%~99%
+    const sc = calcHealthScore({ weight: r.last_weight, target_weight: r.target_weight }, stats)
+    const protein = pseudoRate(r.student_id, 'p', 58, 42) // 58%~99%
     const exerciseReached = todayBurn >= 300
     const hasToday = todayIntake > 0 || todayBurn > 0
     const lastWeight = Number(r.last_weight) || 0
     const firstWeight = Number(r.first_weight) || lastWeight
     return {
-      id: r.id, username: r.username, nickname: r.nickname, gender: r.gender,
+      id: r.student_id, studentId: r.student_id, user_id: r.user_id,
+      username: r.employee_no, nickname: r.name, name: r.name, gender: r.gender,
       age: r.age, height: r.height, weight: lastWeight, targetWeight: r.target_weight,
       activityLevel: r.activity_level, createdAt: r.created_at,
-      orgId: orgOfUser(r.id), budget,
+      orgId: r.org_id, budget,
       todayIntake: Math.round(todayIntake), todayBurn: Math.round(todayBurn), hasToday,
       intakeGap: hasToday ? Math.round(budget - todayIntake) : 0,
       avgIntake: Math.round(Number(r.avg_intake)), avgBurn: Math.round(Number(r.avg_burn)),
@@ -221,7 +214,7 @@ router.get('/members', adminAuth, async (req, res, next) => {
     ok(res, {
       total: users.length,
       list: users.map((u) => ({
-        id: u.id, nickname: u.nickname, username: u.username, gender: u.gender, age: u.age,
+        id: u.id, studentId: u.studentId, name: u.name, nickname: u.nickname, username: u.username, gender: u.gender, age: u.age,
         weight: u.weight, bmi: u.bmi, bmiLabel: u.bmiLabel,
         todayIntake: u.todayIntake, todayBurn: u.todayBurn, intakeGap: u.intakeGap, hasToday: u.hasToday,
         protein: u.protein, proteinGood: u.proteinGood,
@@ -284,11 +277,31 @@ router.post('/intervention', adminAuth, async (req, res, next) => {
   } catch (e) { next(e) }
 })
 
+/**
+ * 解析请求中的学员标识 → 返回 { uid, displayName }
+ * 兼容两种入参：studentId（学员表id，前端用）、userId（C端关联用户id）
+ */
+async function resolveStudent(body) {
+  const studentId = Number(body.studentId)
+  const userId = Number(body.userId)
+  if (studentId) {
+    const [s] = await query('SELECT user_id, name FROM b_students WHERE id = ?', [studentId])
+    if (s) return { uid: s.user_id, displayName: s.name }
+  }
+  if (userId) {
+    const [s] = await query('SELECT user_id, name FROM b_students WHERE user_id = ?', [userId])
+    if (s) return { uid: s.user_id, displayName: s.name }
+    const [u] = await query('SELECT nickname FROM users WHERE id = ?', [userId])
+    if (u) return { uid: userId, displayName: u.nickname }
+  }
+  return { uid: null, displayName: '' }
+}
+
 // ============================ 一键发送饮食建议 ============================
 router.post('/advice', adminAuth, async (req, res, next) => {
   try {
-    const uid = Number(req.body.userId)
-    if (!uid) return fail(res, '缺少 userId')
+    const { uid, displayName } = await resolveStudent(req.body)
+    if (!uid) return fail(res, '缺少学员标识')
     const [me] = await query('SELECT gender, age, height, weight, activity_level, nickname FROM users WHERE id = ?', [uid])
     if (!me) return fail(res, '学员不存在')
     const budget = calcBudget(me)
@@ -303,16 +316,17 @@ router.post('/advice', adminAuth, async (req, res, next) => {
       'INSERT INTO checkins (user_id, date, intake, burn, note) VALUES (?, CURDATE(), ?, ?, ?) ON DUPLICATE KEY UPDATE note = CONCAT(LEFT(COALESCE(note,\'\'),120), ?)',
       [uid, today.intake, today.burn, '[饮食建议] ' + content, ' | [饮食建议] ' + content]
     )
-    ok(res, { userId: uid, nickname: me.nickname, content }, '已发送饮食建议')
+    ok(res, { userId: uid, nickname: displayName || me.nickname, content }, '已发送饮食建议')
   } catch (e) { next(e) }
 })
 
 // ============================ 布置训练计划 ============================
 router.post('/plan', adminAuth, async (req, res, next) => {
   try {
-    const uid = Number(req.body.userId)
     const plan = String(req.body.plan || '').trim()
-    if (!uid || !plan) return fail(res, '缺少 userId 或 plan')
+    if (!plan) return fail(res, '缺少 plan')
+    const { uid, displayName } = await resolveStudent(req.body)
+    if (!uid) return fail(res, '缺少学员标识')
     const [me] = await query('SELECT nickname FROM users WHERE id = ?', [uid])
     if (!me) return fail(res, '学员不存在')
     const [row] = await query('SELECT intake, burn FROM checkins WHERE user_id = ? AND date = CURDATE()', [uid])
@@ -322,7 +336,7 @@ router.post('/plan', adminAuth, async (req, res, next) => {
       'INSERT INTO checkins (user_id, date, intake, burn, note) VALUES (?, CURDATE(), ?, ?, ?) ON DUPLICATE KEY UPDATE note = CONCAT(LEFT(COALESCE(note,\'\'),120), ?)',
       [uid, intake, burn, '[训练计划] ' + plan, ' | [训练计划] ' + plan]
     )
-    ok(res, { userId: uid, nickname: me.nickname, plan }, '训练计划已布置')
+    ok(res, { userId: uid, nickname: displayName || me.nickname, plan }, '训练计划已布置')
   } catch (e) { next(e) }
 })
 

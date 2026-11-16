@@ -9,7 +9,9 @@
     "init-db": "node scripts/init-db.js",
     "migrate": "node scripts/migrate-admin.js",
     "seed": "node scripts/seed-demo.js",
-    "seed:clean": "node scripts/seed-demo.js clean"
+    "seed:clean": "node scripts/seed-demo.js clean",
+    "seed:students": "node scripts/seed-students.js",
+    "seed:students:clean": "node scripts/seed-students.js clean"
   },
   "engines": {
     "node": ">=16"

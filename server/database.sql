@@ -253,6 +253,24 @@ INSERT INTO exercises (name, category, met, description) VALUES
 ('拉伸', '柔韧', 2.3, '运动后必做，缓解酸痛'),
 ('舞蹈', '柔韧', 5.0, '边听音乐边燃脂');
 
+-- ======================== B 端学员表（独立于 C 端用户，规范中文姓名） ========================
+CREATE TABLE IF NOT EXISTS b_students (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL COMMENT '学员真实姓名',
+  employee_no VARCHAR(30) NOT NULL COMMENT '学员编号/工号',
+  gender TINYINT NOT NULL DEFAULT 1 COMMENT '1男 2女',
+  age INT NOT NULL DEFAULT 28 COMMENT '年龄',
+  height DECIMAL(5,1) NOT NULL DEFAULT 170 COMMENT '身高cm',
+  weight DECIMAL(5,1) NULL COMMENT '当前体重kg',
+  target_weight DECIMAL(5,1) NULL COMMENT '目标体重kg',
+  activity_level TINYINT NOT NULL DEFAULT 2 COMMENT '1久坐 2轻度 3中度 4高强度',
+  org_id VARCHAR(30) NOT NULL COMMENT '所属机构id(fitpro/hrclub/nutri)',
+  user_id INT UNSIGNED NULL COMMENT '关联C端用户id(用于复用真实打卡数据)',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_org (org_id),
+  KEY idx_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='B端学员表（机构管理的学员档案）';
+
 -- ======================== 减肥知识文章种子数据 ========================
 INSERT INTO articles (title, category, summary, content) VALUES
 ('科学减脂的第一步：认识热量缺口', '科普',

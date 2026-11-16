@@ -44,8 +44,8 @@ export const bApi = {
   pk: (org: string) => unwrap(http.get('/b/pk', { params: { org } })),
   intervention: (org: string) => unwrap(http.get('/b/intervention', { params: { org } })),
   saveIntervention: (data: any) => unwrap(http.post('/b/intervention', data)),
-  sendAdvice: (userId: number) => unwrap(http.post('/b/advice', { userId })),
-  assignPlan: (userId: number, plan: string) => unwrap(http.post('/b/plan', { userId, plan }))
+  sendAdvice: (studentId: number) => unwrap(http.post('/b/advice', { studentId })),
+  assignPlan: (studentId: number, plan: string) => unwrap(http.post('/b/plan', { studentId, plan }))
 }
 
 export default adminApi
