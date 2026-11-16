@@ -38,6 +38,7 @@ app.use('/api/articles', require('./routes/articles'))
 app.use('/api/checkins', require('./routes/checkins'))
 app.use('/api/ai', require('./routes/ai'))
 app.use('/api/admin', require('./routes/admin'))
+app.use('/api/b', require('./routes/b'))
 
 // 404
 app.use((req, res) => res.status(404).json({ code: 1, msg: '接口不存在: ' + req.method + ' ' + req.path }))
