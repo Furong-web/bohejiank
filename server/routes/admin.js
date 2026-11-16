@@ -155,10 +155,39 @@ router.get('/dashboard', adminAuth, async (req, res, next) => {
 
     const genderDist = await query('SELECT gender, COUNT(*) c FROM users GROUP BY gender')
     const activityDist = await query('SELECT activity_level lvl, COUNT(*) c FROM users GROUP BY activity_level')
-    const recentUsers = users
-      .slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 8)
-      .map(u => ({ id: u.id, nickname: u.nickname, gender: u.gender, createdAt: u.createdAt, score: u.score, level: u.level }))
+
+    // 最近入组学员：取自独立学员库 b_students（规范中文姓名），
+    // 健康分/等级通过 user_id 关联 C 端账号复用真实打卡计算结果
+    const ORG_NAMES = { fitpro: '锋度健身', hrclub: '云栖科技', nutri: '轻营养中心' }
+    const scoreMap = {}
+    users.forEach(u => { scoreMap[u.id] = { score: u.score, level: u.level } })
+    let recentUsers = []
+    try {
+      const students = await query(`
+        SELECT s.id, s.name, s.employee_no, s.org_id, s.user_id, s.gender, s.created_at
+        FROM b_students s ORDER BY s.created_at DESC, s.id DESC LIMIT 8
+      `)
+      recentUsers = students.map(s => {
+        const linked = scoreMap[s.user_id]
+        return {
+          id: s.id, name: s.name, nickname: s.name, employeeNo: s.employee_no,
+          orgId: s.org_id, orgName: ORG_NAMES[s.org_id] || s.org_id,
+          gender: s.gender, createdAt: s.created_at,
+          score: linked ? linked.score : 0,
+          level: linked ? linked.level : '一般'
+        }
+      })
+    } catch (e) {
+      // 学员表尚未初始化时降级为 C 端用户数据，保证看板可用
+      recentUsers = users
+        .slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 8)
+        .map(u => ({
+          id: u.id, name: u.nickname, nickname: u.nickname, employeeNo: '',
+          orgId: '', orgName: 'C 端用户', gender: u.gender,
+          createdAt: u.createdAt, score: u.score, level: u.level
+        }))
+    }
 
     ok(res, {
       overview: {
